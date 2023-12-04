@@ -1,8 +1,7 @@
-use core::num;
 use regex::Regex;
 use std::{
     fs::File,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader}, collections::HashMap,
 };
 
 #[derive(Debug)]
@@ -38,23 +37,23 @@ fn main() {
     }
     let mx = map[0].len() as i32;
     let my = map.len() as i32;
+    let mut gears: HashMap<(i32, i32), Vec<i32>> = HashMap::new();
     for number in numbers.iter_mut() {
-        let mut is_adjacent = false;
         for x in number.x - 1..number.x2 + 1 {
             for y in number.y - 1..number.y + 2 {
                 if x < 0 || y < 0 || x >= mx || y >= my {
                     continue;
                 }
                 let c = map[y as usize][x as usize];
-                if c != '.' && !c.is_digit(10) {
-                    is_adjacent = true;                    
+                if c == '*' {
+                    gears.entry((x, y)).or_insert(vec![]).push(number.value);
                 }
             }
         }
-        if is_adjacent {
-            sum += number.value;
-        } else {
-            println!("{:?}", number);
+    }
+    for gear in gears.values() {
+        if gear.len() == 2 {
+            sum += gear[0] * gear[1];
         }
     }
     println!("Sum: {}", sum);
