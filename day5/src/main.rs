@@ -149,6 +149,7 @@ fn main() {
     }
     let min = ranges.iter().map(|x| x.start).min().unwrap();
     println!("min: {min}");
+    assert_eq!(min, 37384986);
 }
 
 fn seed_ranges_to_seed(seed_ranges: Vec<i64>) -> Vec<Range<i64>> {
