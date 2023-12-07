@@ -17,26 +17,20 @@ struct Map {
 }
 
 fn main() {
-    let file = File::open("input.txt").expect("File not found");
+    let file = File::open("ex.txt").expect("File not found");
     let sre = regex::Regex::new(r" +").unwrap();
     let mut lines = BufReader::new(file).lines();
     let line = lines.next().unwrap().unwrap();
-    let times = line.split(":").last().unwrap().trim();
-    let times = sre.split(times).map(|x| x.parse::<i64>().unwrap()).collect_vec();
+    let t = line.split(":").last().unwrap().trim().replace(" ", "").parse::<i64>().unwrap();
     let line = lines.next().unwrap().unwrap();
-    let distance = line.split(":").last().unwrap().trim();
-    let distance = sre.split(distance).map(|x| x.parse::<i64>().unwrap()).collect_vec();
-    let mut res = 1;
-    for (t, d) in zip(times, distance) {
-        let mut record = 0;
-        for a in 0..t {
-            let cd = a * (t-a);
-            if cd > d {
-                record +=1;
-            }
-            println!("{a} {t} {cd} {d}");
+    let d = line.split(":").last().unwrap().trim().replace(" ", "").parse::<i64>().unwrap();
+    let mut record = 0;
+    for a in 0..t {
+        let cd = a * (t-a);
+        if cd > d {
+            record +=1;
         }
-        res *= record;
+        // println!("{a} {t} {cd} {d}");
     }
-    println!("{}", res);
+    println!("{}", record);
 }
