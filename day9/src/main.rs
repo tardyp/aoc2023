@@ -24,7 +24,7 @@ fn main() {
             tab2.push(cur);
         }
         tab2.reverse();
-        sum += tab2.iter().map(|x|x.last().unwrap()).sum::<i64>();
+        sum += tab2.into_iter().map(|x|x.first().unwrap().clone()).reduce(|a,b|b-a).unwrap();
         println!("{:?}", sum);
 
     }
