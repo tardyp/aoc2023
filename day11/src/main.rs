@@ -61,24 +61,24 @@ fn main() {
             }
         }
         if !found {
+            y += 1000000;
+        } else {
             y += 1;
         }
-        y += 1;
     }
     let mut expand_xs = Vec::new();
     let mut expand_x = 0;
     for x in 0..*cols.iter().max().unwrap() + 1 {
         expand_xs.push(expand_x);
         if !cols.contains(&x) {
+            expand_x += 1000000;
+        }else {
             expand_x += 1
         }
-        expand_x += 1
     }
-    display_map(&map);
     for p in map.iter_mut() {
         p.x = expand_xs[p.x as usize];
     }
-    display_map(&map);
     let mut sum = 0;
     for i in 0..map.len() {
         let p1 = &map[i];
