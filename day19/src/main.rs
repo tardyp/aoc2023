@@ -1,5 +1,7 @@
 use itertools::Itertools;
 use nom;
+use std::ops::Mul;
+
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while1},
@@ -10,6 +12,7 @@ use nom::{
     IResult,
 };
 use std::collections::HashMap;
+use std::ops::{Range, RangeInclusive};
 use std::rc::Rc;
 use std::{
     collections::HashSet,
@@ -24,7 +27,7 @@ enum Cmp {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct Step {
-    name: String,
+    name: usize,
     cmp: Cmp,
     value: i64,
     next: String,
@@ -43,7 +46,14 @@ fn parse_step(input: &str) -> IResult<&str, Step> {
     Ok((
         input,
         Step {
-            name: name.to_string(),
+            name: // either x, m, a, or s
+            match name {
+                "x" => 0,
+                "m" => 1,
+                "a" => 2,
+                "s" => 3,
+                _ => panic!("Invalid name"),
+            },
             cmp,
             value,
             next: next.to_string(),
@@ -58,7 +68,7 @@ struct Workflow {
 }
 // workflow is in the form: px{a<2006:qkq,m>2090:A,rfg}
 // note that the last step does not include comparison
-fn parse_workflow(input: & str) -> Result<Workflow, Box<dyn std::error::Error + '_>> {
+fn parse_workflow(input: &str) -> Result<Workflow, Box<dyn std::error::Error + '_>> {
     let (input, (name, _, steps, _, default, _)) = tuple((
         take_while1(|c: char| c.is_ascii_alphabetic()),
         tag("{"),
@@ -74,6 +84,11 @@ fn parse_workflow(input: & str) -> Result<Workflow, Box<dyn std::error::Error + 
     })
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct Vals {
+    ranges: [RangeInclusive<i64>; 4],
+    state: String,
+}
 #[cfg(debug_assertions)]
 const FILENAME: &str = "ex.txt";
 #[cfg(not(debug_assertions))]
@@ -92,44 +107,75 @@ fn main() {
         let wf = parse_workflow(&line).unwrap();
         wfs.insert(wf.name.clone(), wf);
     }
-    //{x=787,m=2655,a=1222,s=2876}
     let mut sum = 0;
-    for line in second {
-        let mut values = line
-            .trim_start_matches('{')
-            .trim_end_matches('}')
-            .split(',')
-            .map(|x| {
-                let (k, v) = x.split_at(x.find('=').unwrap());
-                (k.to_string(), v[1..].parse::<i64>().unwrap())
-            })
-            .collect::<HashMap<String, i64>>();
-        println!("{:?}", values);
-        let mut next = "in".to_string();
-        loop {
-            println!("{:?}", next);
-            let wf = wfs.get_mut(&next).unwrap();
-            next = wf.default.clone();
-            for s in &wf.steps {
-                let v = *values.get(&s.name).unwrap();
-                if s.cmp == Cmp::Less && v < s.value {
-                    next = s.next.clone();
-                    break;
-                } else if s.cmp == Cmp::Greater && v > s.value {
-                    next = s.next.clone();
-                    break;
+    let mut ranges: Vec<Vals> = vec![Vals {
+        ranges: [1..=4000, 1..=4000, 1..=4000, 1..=4000],
+        // ranges: [1679..=1679,44..=44,2067..=2067,496..=496],
+        state: "in".to_string(),
+    }];
+    while !ranges.is_empty() {
+        let mut values = ranges.pop().unwrap();
+        if values.state == "A" {
+            let v = values
+                .ranges
+                .iter()
+                .map(|x| *x.end() - *x.start() + 1)
+                .reduce(i64::mul)
+                .unwrap();
+            println!("Found A for {:?} {v}", values.ranges);
+            sum += v;
+            continue;
+        }
+        if values.state == "R" {
+            println!("Found R for {:?}", values.ranges);
+            continue;
+        }
+        let wf = wfs.get(&values.state).unwrap();
+        values.state = wf.default.clone();
+        for s in &wf.steps {
+            let r = &values.ranges[s.name];
+            match s.cmp {
+                Cmp::Less => {
+                    if !(r.contains(&s.value)) {
+                        if *r.end() < s.value {
+                            values.state = s.next.clone();
+                            break;
+                        }
+                        continue;
+                    }
+                    let mut new_values = values.clone();
+                    new_values.ranges[s.name] = *r.start()..=(s.value - 1);
+                    new_values.state = s.next.clone();
+                    values.ranges[s.name] = s.value..=*r.end();
+                    ranges.push(new_values);
+                }
+                Cmp::Greater => {
+                    if !(r.contains(&s.value)) {
+                        // no need to split, but we take the full range to next step
+                        if *r.start() > s.value {
+                            values.state = s.next.clone();
+                            break;
+                        }
+                        continue;
+                    }
+                    let mut new_values = values.clone();
+                    new_values.ranges[s.name] = (s.value + 1)..=*r.end();
+                    new_values.state = s.next.clone();
+                    values.ranges[s.name] = *r.start()..=s.value;
+                    ranges.push(new_values);
                 }
             }
-            if next == "A" {
-                println!("Found A");
-                sum += values.values().sum::<i64>();
-                break;
-            }
-            if next == "R" {
-                println!("Found R");
+        }
+        let mut empty = false;
+        for r in &values.ranges {
+            if r.is_empty() {
+                empty = true;
                 break;
             }
         }
+        if !empty {
+            ranges.push(values);
+        }
     }
-    println!("Part 1: {}", sum);
+    println!("Part 2: {}", sum);
 }
