@@ -19,7 +19,7 @@ fn search_result(result: i64, numbers: &[i64]) -> bool {
     if numbers.len() == 1 {
         return numbers[0] == result;
     }
-    for i in 0..2 {
+    for i in 0..3 {
         let cur =
         match i {
             0 => {
@@ -27,6 +27,9 @@ fn search_result(result: i64, numbers: &[i64]) -> bool {
             }
             1 => {
                 numbers[0] * numbers[1]
+            }
+            2 => {
+                format!("{}{}", numbers[0], numbers[1]).parse::<i64>().unwrap()
             }
             _ => {
                 panic!("Invalid operator");
