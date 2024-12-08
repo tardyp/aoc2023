@@ -54,9 +54,8 @@ fn main_1() {
         let (result, numbers) = line.split(": ").collect_tuple().unwrap();
         let result = result.parse::<i64>().unwrap();
         let numbers = numbers.split_whitespace().map(|x| x.parse::<i64>().unwrap()).collect::<Vec<_>>();
-        println!("{} {:?}", result, numbers);
         if search_result(result, &numbers) {
-            println!("Found: {} {:?}", result, numbers);
+            // println!("Found: {} {:?}", result, numbers);
             sum += result;
         }
         // sum += result;
