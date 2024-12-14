@@ -58,7 +58,7 @@ fn main() {
         for num in stones{
             *counts.entry(num).or_insert(0) += 1;
         }
-    for _ in 0..75 {
+    for _ in 0..750 {
          apply_rules_count(&mut counts);
     }
         let mut total_count: u64 = 0;
